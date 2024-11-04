@@ -22,9 +22,20 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError('Need to implement for Task 1.1')
+    vals_plus = list(vals)
+    vals_minus = list(vals)
 
+    # Изменяем только выбранный аргумент arg
+    vals_plus[arg] += epsilon
+    vals_minus[arg] -= epsilon
+
+    # Вычисляем значения функции в точках с измененным аргументом
+    f_plus = f(*vals_plus)
+    f_minus = f(*vals_minus)
+
+    # Вычисляем центральную разность
+    derivative = (f_plus - f_minus) / (2 * epsilon)
+    return derivative
 
 variable_count = 1
 
@@ -61,23 +72,49 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    visited = set()
+    order = []
+
+    def dfs(v: Variable):
+        if v in visited:
+            return
+        visited.add(v)
+        for parent in v.parents:
+            dfs(parent)
+        order.append(v)
+
+    dfs(variable)
+
+    return reversed(order)
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
     """
-    Runs backpropagation on the computation graph in order to
-    compute derivatives for the leave nodes.
+       Runs backpropagation on the computation graph in order to
+       compute derivatives for the leave nodes.
 
-    Args:
-        variable: The right-most variable
-        deriv  : Its derivative that we want to propagate backward to the leaves.
+       Args:
+           variable: The right-most variable
+           deriv  : Its derivative that we want to propagate backward to the leaves.
 
-    No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
-    """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+       No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
+       """
+    adjoints = {variable: deriv}
+
+    order = list(topological_sort(variable))
+
+    for v in order:
+        derivative = adjoints.get(v, 0)
+        if v.is_leaf():
+            v.accumulate_derivative(derivative)
+        else:
+            for parent, local_derivative in v.chain_rule(derivative):
+                if not parent.is_constant():
+                    if parent in adjoints:
+                        adjoints[parent] += local_derivative
+                    else:
+                        adjoints[parent] = local_derivative
+
 
 
 @dataclass
